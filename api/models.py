@@ -1,8 +1,10 @@
 from django.db import models
 
 
-# Create your models here.
 class Order(models.Model):
-    # Add your model here
-    pass
+    order_number = models.CharField(max_length=64, unique=True)
+    total_price = models.PositiveIntegerField()
+    created_time = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self) -> str:
+        return self.order_number
