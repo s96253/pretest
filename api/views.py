@@ -2,17 +2,13 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
 from api.models import Order
-
-ACCEPTED_TOKEN = "omni_pretest_token"
+from api.decorators import require_valid_token
 
 
 @api_view(["POST"])
+@require_valid_token
 def import_order(request):
     data = request.data
-
-    token = data.get("token")
-    if token != ACCEPTED_TOKEN:
-        return JsonResponse({"detail": "Invalid token"}, status=403)
 
     order_number = data.get("order_number")
     total_price = data.get("total_price")
@@ -26,9 +22,9 @@ def import_order(request):
     try:
         total_price_int = int(total_price)
         if total_price_int < 0:
-            raise ValueError("total_price must be non-negative")
+            raise ValueError
     except (TypeError, ValueError):
-        return JsonResponse({"detail": "total_price must be an integer"}, status=400)
+        return JsonResponse({"detail": "total_price must be a non-negative integer"}, status=400)
 
     order, created = Order.objects.get_or_create(
         order_number=order_number,
@@ -36,7 +32,6 @@ def import_order(request):
     )
 
     if not created:
-        # 如果訂單號已存在，更新價格（也可以改成回 409；這版更實用）
         order.total_price = total_price_int
         order.save(update_fields=["total_price"])
 
